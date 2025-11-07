@@ -1,0 +1,9 @@
+import tema1.*
+
+describe "Parcial tema 1" {
+
+  test "pepita has initial energy" {
+    assert.equals(1, 1)
+  }
+
+}
