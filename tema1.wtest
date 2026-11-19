@@ -1,0 +1,239 @@
+import tema1.*
+
+describe "Tema 1 - Punto 1: perjuicio económico de las causas" {
+  test "una causa de soborno con arrepentidos suma 1 millón al monto base" {
+    const causa = new Soborno(
+      montoBase = 4,
+      hayArrepentidos = true
+    )
+    assert.equals(5, causa.perjuicioEconomico())
+  }
+
+  test "una causa de soborno sin arrepentidos suma 2 millones al monto base" {
+    const causa = new Soborno(
+      montoBase = 4,
+      hayArrepentidos = false
+    )
+    assert.equals(6, causa.perjuicioEconomico())
+  }
+
+  test "la causa de obra pública con hasta dos jueces suma 2 millones al monto base" {
+    obraPublica.vincularJuez("Dr. Rodolfo Kometa")
+    obraPublica.vincularJuez("Dr. Jorge Garantis")
+    assert.equals(5, obraPublica.perjuicioEconomico())
+  }
+
+  test "la causa de obra pública con más de dos jueces no suma nada al monto base" {
+    obraPublica.vincularJuez("Dr. Rodolfo Kometa")
+    obraPublica.vincularJuez("Dr. Jorge Garantis")
+    obraPublica.vincularJuez("Dr. Armando U. Nacausa")
+    assert.equals(3, obraPublica.perjuicioEconomico())
+  }
+
+  test "una causa compleja sin sub-causas tiene como perjuicio su monto base" {
+    const causa = new CausaCompleja(montoBase = 10)
+    assert.equals(10, causa.perjuicioEconomico())
+  }
+
+  test "una causa compleja con sub-causas simples suma a su monto base los montos extra de cada una" {
+    const conArrepentidos = new Soborno(
+      montoBase = 100,
+      hayArrepentidos = true
+    )
+    const sinArrepentidos = new Soborno(
+      montoBase = 200,
+      hayArrepentidos = false
+    )
+    const causa = new CausaCompleja(
+      montoBase = 10,
+      causas = [conArrepentidos, sinArrepentidos]
+    )
+    assert.equals(13, causa.perjuicioEconomico())
+  }
+
+  test "una causa compleja con una sub-causa compleja suma también los montos extra anidados" {
+    const sinArrepentidos = new Soborno(
+      montoBase = 200,
+      hayArrepentidos = false
+    )
+    const subCausaCompleja = new CausaCompleja(
+      montoBase = 50,
+      causas = [sinArrepentidos, obraPublica]
+    )
+    const causa = new CausaCompleja(
+      montoBase = 10,
+      causas = [subCausaCompleja]
+    )
+    assert.equals(14, causa.perjuicioEconomico())
+  }
+}
+
+describe "Tema 1 - Punto 2: comerse una causa" {
+  const juezAmigo = "Dr. Armando U. Nacausa"
+  const ejecutivo = new PoderEjecutivo(juezAmigo = juezAmigo)
+  // perjuicio económico de 10 millones => el 50% son 5 millones
+  const causa = new Soborno(
+    montoBase = 8,
+    hayArrepentidos = false
+  )
+
+  test "un funcionario sin patrimonio no puede comerse una causa aunque su cargo lo permita" {
+    causa.vincularJuez(juezAmigo)
+    const funcionario = new Funcionario(patrimonio = 0, cargo = ejecutivo)
+    assert.throwsExceptionWithMessage(
+      "Está incriminando a un chicho que no tiene plata",
+      { funcionario.comerseUnaCausa(causa) }
+    )
+    assert.that(funcionario.causasJudiciales().isEmpty())
+  }
+
+  test "un funcionario del poder ejecutivo se come una causa que trata su juez amigo" {
+    causa.vincularJuez(juezAmigo)
+    const funcionario = new Funcionario(patrimonio = 1, cargo = ejecutivo)
+    funcionario.comerseUnaCausa(causa)
+    assert.equals([causa], funcionario.causasJudiciales())
+  }
+
+  test "un funcionario del poder ejecutivo no puede comerse una causa que no trata su juez amigo" {
+    causa.vincularJuez("Dr. Jorge Garantis")
+    const funcionario = new Funcionario(patrimonio = 1, cargo = ejecutivo)
+    assert.throwsExceptionWithMessage(
+      "Necesito tener un juez amigo para estar en esta causa",
+      { funcionario.comerseUnaCausa(causa) }
+    )
+    assert.that(funcionario.causasJudiciales().isEmpty())
+  }
+
+  test "un ministro con patrimonio mayor al 50% del perjuicio se come la causa" {
+    const funcionario = new Funcionario(patrimonio = 5.1, cargo = ministro)
+    funcionario.comerseUnaCausa(causa)
+    assert.equals([causa], funcionario.causasJudiciales())
+  }
+
+  test "un ministro con patrimonio igual al 50% del perjuicio no puede comerse la causa" {
+    const funcionario = new Funcionario(patrimonio = 5, cargo = ministro)
+    assert.throwsExceptionWithMessage(
+      "El patrimonio debe ser mayor al 50% del perjuicio económico de la causa",
+      { funcionario.comerseUnaCausa(causa) }
+    )
+    assert.that(funcionario.causasJudiciales().isEmpty())
+  }
+
+  test "un ministro con patrimonio menor al 50% del perjuicio no puede comerse la causa" {
+    const funcionario = new Funcionario(patrimonio = 4.9, cargo = ministro)
+    assert.throwsException({ funcionario.comerseUnaCausa(causa) })
+  }
+
+  test "un funcionario que cambia de cargo pasa a validar las causas con las reglas del nuevo cargo" {
+    const funcionario = new Funcionario(patrimonio = 100, cargo = ejecutivo)
+    assert.throwsException({ funcionario.comerseUnaCausa(causa) })
+    funcionario.cargo(ministro)
+    funcionario.comerseUnaCausa(causa)
+    assert.equals([causa], funcionario.causasJudiciales())
+  }
+}
+
+describe "Tema 1 - Punto 3: arco político" {
+  const funcionario = new Funcionario(patrimonio = 100, cargo = ministro)
+
+  method causaConPerjuicio(perjuicio) = new Soborno(
+    montoBase = perjuicio - 1,
+    hayArrepentidos = true
+  )
+
+  test "una causa con perjuicio mayor a 5 millones deja pegado al funcionario" {
+    const causa = self.causaConPerjuicio(5.1)
+    funcionario.comerseUnaCausa(causa)
+    assert.equals([causa], funcionario.causasQueTeDejanPegado())
+  }
+
+  test "una causa con perjuicio de exactamente 5 millones no deja pegado al funcionario" {
+    funcionario.comerseUnaCausa(self.causaConPerjuicio(5))
+    assert.that(funcionario.causasQueTeDejanPegado().isEmpty())
+  }
+
+  test "un funcionario sin causas no tiene causas que lo dejen pegado" {
+    assert.that(funcionario.causasQueTeDejanPegado().isEmpty())
+  }
+
+  test "un funcionario con causas de perjuicio alto y bajo solo queda pegado por las de perjuicio alto" {
+    const causaAlta = self.causaConPerjuicio(8)
+    funcionario.comerseUnaCausa(causaAlta)
+    funcionario.comerseUnaCausa(self.causaConPerjuicio(2))
+    assert.equals([causaAlta], funcionario.causasQueTeDejanPegado())
+  }
+
+  test "salir en los medios aumenta 0,1 millones el monto base de todas las causas del funcionario" {
+    const unaCausa = self.causaConPerjuicio(3)
+    const otraCausa = self.causaConPerjuicio(4)
+    funcionario.comerseUnaCausa(unaCausa)
+    funcionario.comerseUnaCausa(otraCausa)
+    funcionario.salirEnLosMedios()
+    assert.equals(3.1, unaCausa.perjuicioEconomico())
+    assert.equals(4.1, otraCausa.perjuicioEconomico())
+  }
+
+  test "salir en los medios no modifica las causas que el funcionario no se comió" {
+    const causaAjena = self.causaConPerjuicio(3)
+    funcionario.comerseUnaCausa(self.causaConPerjuicio(4))
+    funcionario.salirEnLosMedios()
+    assert.equals(3, causaAjena.perjuicioEconomico())
+  }
+}
+
+describe "Tema 1 - Punto 4: propuestas de campaña" {
+  const fechaPresentacion = new Date(day = 10, month = 3, year = 2025)
+  const ejecutivo = new Funcionario(
+    patrimonio = 100,
+    cargo = new PoderEjecutivo(
+      juezAmigo = "Dr. Rodolfo Kometa",
+      palabrasClave = ["aumento", "impuestos", "inflación"]
+    )
+  )
+  const elMinistro = new Funcionario(patrimonio = 100, cargo = ministro)
+
+  method propuesta(descripcion, fechaCumplimiento) = new Propuesta(
+    descripcion = descripcion,
+    fechaPresentacion = fechaPresentacion,
+    fechaCumplimiento = fechaCumplimiento
+  )
+
+  test "un funcionario del poder ejecutivo acepta tal cual una propuesta cuya descripción contiene una palabra clave" {
+    const fechaCumplimiento = fechaPresentacion.plusYears(2)
+    const propuesta = self.propuesta("Bajar los impuestos", fechaCumplimiento)
+    ejecutivo.escucharPropuesta(propuesta)
+    assert.equals(fechaCumplimiento, propuesta.fechaCumplimiento())
+    assert.equals([propuesta], ejecutivo.promesas())
+  }
+
+  test "un funcionario del poder ejecutivo posterga 4 años una propuesta cuya descripción no contiene palabras clave" {
+    const fechaCumplimiento = fechaPresentacion.plusYears(2)
+    const propuesta = self.propuesta("Arreglar las veredas", fechaCumplimiento)
+    ejecutivo.escucharPropuesta(propuesta)
+    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+    assert.equals([propuesta], ejecutivo.promesas())
+  }
+
+  test "un ministro acepta tal cual una propuesta con menos de un año entre presentación y cumplimiento" {
+    const fechaCumplimiento = fechaPresentacion.plusYears(1).minusDays(1)
+    const propuesta = self.propuesta("Arreglar las veredas", fechaCumplimiento)
+    elMinistro.escucharPropuesta(propuesta)
+    assert.equals(fechaCumplimiento, propuesta.fechaCumplimiento())
+    assert.equals([propuesta], elMinistro.promesas())
+  }
+
+  test "un ministro posterga 4 años una propuesta con exactamente un año entre presentación y cumplimiento" {
+    const fechaCumplimiento = fechaPresentacion.plusYears(1)
+    const propuesta = self.propuesta("Arreglar las veredas", fechaCumplimiento)
+    elMinistro.escucharPropuesta(propuesta)
+    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+    assert.equals([propuesta], elMinistro.promesas())
+  }
+
+  test "un ministro posterga 4 años una propuesta con más de un año entre presentación y cumplimiento" {
+    const fechaCumplimiento = fechaPresentacion.plusYears(3)
+    const propuesta = self.propuesta("Arreglar las veredas", fechaCumplimiento)
+    elMinistro.escucharPropuesta(propuesta)
+    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+  }
+}
