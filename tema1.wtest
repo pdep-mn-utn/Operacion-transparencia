@@ -199,7 +199,7 @@ describe "Tema 1 - Punto 4: propuestas de campaña" {
   )
 
   test "un funcionario del poder ejecutivo acepta tal cual una propuesta cuya descripción contiene una palabra clave" {
-    const fechaCumplimiento = fechaPresentacion.plusYears(2)
+    const fechaCumplimiento = new Date(day = 10, month = 3, year = 2027)
     const propuesta = self.propuesta("Bajar los impuestos", fechaCumplimiento)
     ejecutivo.escucharPropuesta(propuesta)
     assert.equals(fechaCumplimiento, propuesta.fechaCumplimiento())
@@ -207,15 +207,15 @@ describe "Tema 1 - Punto 4: propuestas de campaña" {
   }
 
   test "un funcionario del poder ejecutivo posterga 4 años una propuesta cuya descripción no contiene palabras clave" {
-    const fechaCumplimiento = fechaPresentacion.plusYears(2)
+    const fechaCumplimiento = new Date(day = 10, month = 3, year = 2027)
     const propuesta = self.propuesta("Arreglar las veredas", fechaCumplimiento)
     ejecutivo.escucharPropuesta(propuesta)
-    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+    assert.equals(new Date(day = 10, month = 3, year = 2031), propuesta.fechaCumplimiento())
     assert.equals([propuesta], ejecutivo.promesas())
   }
 
   test "un ministro acepta tal cual una propuesta con menos de un año entre presentación y cumplimiento" {
-    const fechaCumplimiento = fechaPresentacion.plusYears(1).minusDays(1)
+    const fechaCumplimiento = new Date(day = 9, month = 3, year = 2026)
     const propuesta = self.propuesta("Arreglar las veredas", fechaCumplimiento)
     elMinistro.escucharPropuesta(propuesta)
     assert.equals(fechaCumplimiento, propuesta.fechaCumplimiento())
@@ -223,17 +223,17 @@ describe "Tema 1 - Punto 4: propuestas de campaña" {
   }
 
   test "un ministro posterga 4 años una propuesta con exactamente un año entre presentación y cumplimiento" {
-    const fechaCumplimiento = fechaPresentacion.plusYears(1)
+    const fechaCumplimiento = new Date(day = 10, month = 3, year = 2026)
     const propuesta = self.propuesta("Arreglar las veredas", fechaCumplimiento)
     elMinistro.escucharPropuesta(propuesta)
-    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+    assert.equals(new Date(day = 10, month = 3, year = 2030), propuesta.fechaCumplimiento())
     assert.equals([propuesta], elMinistro.promesas())
   }
 
   test "un ministro posterga 4 años una propuesta con más de un año entre presentación y cumplimiento" {
-    const fechaCumplimiento = fechaPresentacion.plusYears(3)
+    const fechaCumplimiento = new Date(day = 10, month = 3, year = 2028)
     const propuesta = self.propuesta("Arreglar las veredas", fechaCumplimiento)
     elMinistro.escucharPropuesta(propuesta)
-    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+    assert.equals(new Date(day = 10, month = 3, year = 2032), propuesta.fechaCumplimiento())
   }
 }

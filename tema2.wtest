@@ -1,11 +1,16 @@
 import tema2.*
 
 describe "Tema 2 - Punto 1: perjuicio económico de las causas" {
+  const calendarioDeTesteo = object {
+    method hoy() = new Date(day = 15, month = 6, year = 2025)
+  }
+
   test "una causa de desvío de fondos iniciada este año no suma nada al monto base" {
     const causa = new DesvioDeFondos(
       montoBase = 4,
       caratula = "Fondos reservados",
-      fechaCausa = new Date()
+      fechaCausa = new Date(day = 10, month = 1, year = 2025),
+      calendarioActual = calendarioDeTesteo
     )
     assert.equals(4, causa.perjuicioEconomico())
   }
@@ -14,7 +19,8 @@ describe "Tema 2 - Punto 1: perjuicio económico de las causas" {
     const causa = new DesvioDeFondos(
       montoBase = 4,
       caratula = "Fondos reservados",
-      fechaCausa = new Date().minusYears(2)
+      fechaCausa = new Date(day = 20, month = 11, year = 2023),
+      calendarioActual = calendarioDeTesteo
     )
     assert.equals(7, causa.perjuicioEconomico())
   }
@@ -36,7 +42,8 @@ describe "Tema 2 - Punto 1: perjuicio económico de las causas" {
     const desvio = new DesvioDeFondos(
       montoBase = 100,
       caratula = "Fondos reservados",
-      fechaCausa = new Date().minusYears(2)
+      fechaCausa = new Date(day = 20, month = 11, year = 2023),
+      calendarioActual = calendarioDeTesteo
     )
     const causa = new CausaCompleja(
       montoBase = 10,
@@ -62,10 +69,15 @@ describe "Tema 2 - Punto 1: perjuicio económico de las causas" {
 }
 
 describe "Tema 2 - Punto 2: comerse una causa" {
+  const calendarioDeTesteo = object {
+    method hoy() = new Date(day = 15, month = 6, year = 2025)
+  }
+
   method causaConMontoBase(montoBase) = new DesvioDeFondos(
     montoBase = montoBase,
     caratula = "Fondos reservados",
-    fechaCausa = new Date()
+    fechaCausa = new Date(day = 10, month = 1, year = 2025),
+    calendarioActual = calendarioDeTesteo
   )
 
   method legisladorConCausas(cantidad) {
@@ -139,12 +151,17 @@ describe "Tema 2 - Punto 2: comerse una causa" {
 }
 
 describe "Tema 2 - Punto 3: arco político" {
+  const calendarioDeTesteo = object {
+    method hoy() = new Date(day = 15, month = 6, year = 2025)
+  }
+
   const funcionario = new Funcionario(patrimonio = 100, cargo = legislador)
 
   method causa(caratula, montoBase) = new DesvioDeFondos(
     montoBase = montoBase,
     caratula = caratula,
-    fechaCausa = new Date()
+    fechaCausa = new Date(day = 10, month = 1, year = 2025),
+    calendarioActual = calendarioDeTesteo
   )
 
   test "un funcionario sin causas no tiene carátulas raris" {
@@ -207,21 +224,28 @@ describe "Tema 2 - Punto 3: arco político" {
 }
 
 describe "Tema 2 - Punto 4: propuestas de campaña" {
+  const calendarioDeTesteo = object {
+    method hoy() = new Date(day = 15, month = 6, year = 2025)
+  }
+
   const elLegislador = new Funcionario(patrimonio = 100, cargo = legislador)
   const elJefeDeGobierno = new Funcionario(
     patrimonio = 100,
     cargo = jefeDeGobierno
   )
-  const fechaCumplimiento = new Date().plusYears(2)
+  const fechaCumplimiento = new Date(day = 10, month = 12, year = 2026)
+  const fechaPostergada = new Date(day = 10, month = 12, year = 2030)
+  const fechaDelAnioVigente = new Date(day = 3, month = 2, year = 2025)
 
   method propuesta(descripcion, fechaPresentacion) = new Propuesta(
     descripcion = descripcion,
     fechaPresentacion = fechaPresentacion,
-    fechaCumplimiento = fechaCumplimiento
+    fechaCumplimiento = fechaCumplimiento,
+    calendarioActual = calendarioDeTesteo
   )
 
   test "un legislador acepta tal cual una propuesta presentada en el año vigente" {
-    const propuesta = self.propuesta("Arreglar las veredas", new Date())
+    const propuesta = self.propuesta("Arreglar las veredas", fechaDelAnioVigente)
     elLegislador.escucharPropuesta(propuesta)
     assert.equals(fechaCumplimiento, propuesta.fechaCumplimiento())
     assert.equals([propuesta], elLegislador.promesas())
@@ -230,33 +254,33 @@ describe "Tema 2 - Punto 4: propuestas de campaña" {
   test "un legislador posterga 4 años una propuesta presentada en un año anterior" {
     const propuesta = self.propuesta(
       "Arreglar las veredas",
-      new Date().minusYears(1)
+      new Date(day = 31, month = 12, year = 2024)
     )
     elLegislador.escucharPropuesta(propuesta)
-    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+    assert.equals(fechaPostergada, propuesta.fechaCumplimiento())
     assert.equals([propuesta], elLegislador.promesas())
   }
 
   test "un jefe de gobierno acepta tal cual una propuesta con descripción de menos de 15 caracteres" {
-    const propuesta = self.propuesta("Bajar impuesto", new Date())
+    const propuesta = self.propuesta("Bajar impuesto", fechaDelAnioVigente)
     elJefeDeGobierno.escucharPropuesta(propuesta)
     assert.equals(fechaCumplimiento, propuesta.fechaCumplimiento())
     assert.equals([propuesta], elJefeDeGobierno.promesas())
   }
 
   test "un jefe de gobierno posterga 4 años una propuesta con descripción de exactamente 15 caracteres" {
-    const propuesta = self.propuesta("Bajar impuestos", new Date())
+    const propuesta = self.propuesta("Bajar impuestos", fechaDelAnioVigente)
     elJefeDeGobierno.escucharPropuesta(propuesta)
-    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+    assert.equals(fechaPostergada, propuesta.fechaCumplimiento())
     assert.equals([propuesta], elJefeDeGobierno.promesas())
   }
 
   test "un jefe de gobierno posterga 4 años una propuesta con descripción de más de 15 caracteres" {
     const propuesta = self.propuesta(
       "Bajar todos los impuestos provinciales",
-      new Date()
+      fechaDelAnioVigente
     )
     elJefeDeGobierno.escucharPropuesta(propuesta)
-    assert.equals(fechaCumplimiento.plusYears(4), propuesta.fechaCumplimiento())
+    assert.equals(fechaPostergada, propuesta.fechaCumplimiento())
   }
 }

@@ -1,3 +1,7 @@
+object calendario {
+  method hoy() = new Date()
+}
+
 class CausaJudicial {
   const juecesVinculados = []
   var montoBase
@@ -22,8 +26,9 @@ class CausaJudicial {
 
 class DesvioDeFondos inherits CausaJudicial {
   const fechaCausa
+  const calendarioActual = calendario
 
-  method aniosPendiente() = new Date().year() - fechaCausa.year()
+  method aniosPendiente() = calendarioActual.hoy().year() - fechaCausa.year()
 
   override method ajusteEspecifico() = self.aniosPendiente() * 1.5
 }
@@ -106,6 +111,7 @@ class Propuesta {
   const fechaPresentacion
   var fechaCumplimiento
   const descripcion
+  const calendarioActual = calendario
 
   method fechaCumplimiento() = fechaCumplimiento
 
@@ -113,7 +119,7 @@ class Propuesta {
     fechaCumplimiento = fechaCumplimiento.plusYears(4)
   }
 
-  method esDelAnioVigente() = new Date().year() == fechaPresentacion.year()
+  method esDelAnioVigente() = calendarioActual.hoy().year() == fechaPresentacion.year()
 
   method esTranqui() = descripcion.size() < 15
 }
